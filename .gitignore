@@ -401,3 +401,4 @@ FodyWeavers.xsd
 
 # JetBrains IntelliJ
 *.idea
+*.DS_Store
