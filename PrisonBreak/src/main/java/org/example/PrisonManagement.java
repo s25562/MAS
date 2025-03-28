@@ -7,8 +7,12 @@ public class PrisonManagement {
         Prisoner p1 = new Prisoner("John", "Doe", 101, "Robbery", Optional.of(10));
         Prisoner p2 = new Prisoner("Mark", "Smith", 102, "Fraud", null);
 
+        p1.showSentencedDeath();
+        p2.showSentencedDeath();
+
         p1.addPrivilege("Library access");
         p2.addPrivilege("Gym access");
+
 
         System.out.println(p1);
         System.out.println("Privileges: " + p1.getPrivileges());
