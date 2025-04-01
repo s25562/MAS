@@ -1,18 +1,29 @@
 package org.example;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
 
-class Prisoner implements Serializable {
-    private static final String FILE_NAME = "prisoners.dat"; // File for prisoners data
-    // A class attribute
-    private static int lifeSentenceCount = 0;
+/*
+To Do:
+- Ekstensja - done
+- Ekstensja, trwałość - done
+- Atrybut złożony - done
+- Atrybut opcjonalny - done
+- Atrybut powtarzalny
+- Atrybut klasowy - done
+- Atrybut pochodny - done
+- Metoda klasowa - done
+- Przesłonięcie, przeciążenie
+ */
 
-    // A complex attribute (full name as an object)
-    static class FullName {
+public class Prisoner implements Serializable {
+    private static final String FILE_NAME = "prisoners.dat";
+
+    private static class FullName implements Serializable {
+        //private static final long serialVersionUID = 1L; // UID dla FullName
         String firstName;
         String lastName;
 
@@ -27,77 +38,85 @@ class Prisoner implements Serializable {
         }
     }
 
-    private static List<Prisoner> extent = new ArrayList<>(); // Class extent – persistence
-
+    // Variables & Resources
+    private static List<Prisoner> prisoners = new ArrayList<>();
     private FullName name;
     private int id;
     private String crime;
-    private Optional<Integer> sentenceLength; // An optional attribute
-    private List<String> privileges; // A multi-value attribute
+    private Integer sentenceLength;
 
-    public Prisoner(String firstName, String lastName, int id, String crime, Optional<Integer> sentenceLength) {
-        this.name = new FullName(firstName, lastName);
+    private int yearOfBegining;
+    private List<String> privileges;
+    private static int totalPrisoners = 0;
+
+    public Prisoner(int id, String firstName, String lastName, String crime, int yearOfBegining, Integer sentenceLength) {
         this.id = id;
+        this.yearOfBegining = yearOfBegining;
+        this.name = new FullName(firstName, lastName);
         this.crime = crime;
         this.sentenceLength = sentenceLength;
         this.privileges = new ArrayList<>();
-        if (sentenceLength == null) {
-            lifeSentenceCount++;
-        }
-        extent.add(this);
-        saveExtent(); // For extent durability
+        addExtent(this);
+        saveExtent();
     }
 
-    // For extent durability
-    private static void saveExtent() {
+    public static void clearExtent() {
+        prisoners.clear();
+        saveExtent();
+    }
+
+    public static void saveExtent() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
-            oos.writeObject(extent);
+            oos.writeObject(prisoners);
         } catch (IOException e) {
-            System.err.println("Save extent error: " + e.getMessage());
+            System.err.println("Błąd zapisu ekstensji: " + e.getMessage());
         }
     }
-    // For extent durability
+
     public static void loadExtent() {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
-            extent = (List<Prisoner>) ois.readObject();
+            prisoners = (List<Prisoner>) ois.readObject();
+            totalPrisoners = prisoners.size();
         } catch (FileNotFoundException e) {
-            System.out.println("There is no saved extent, starting new.");
+            System.out.println("Brak zapisanej ekstensji, rozpoczynamy od zera.");
+            prisoners = new ArrayList<>();
+            totalPrisoners = 0;
+
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Read extent error: " + e.getMessage());
+            System.err.println("Błąd odczytu ekstensji: " + e.getMessage());
         }
     }
 
-    // A class method
-    public static Prisoner findPrisonerById(int id) {
-        for (Prisoner p : extent) {
-            if (p.id == id) {
-                return p;
-            }
+    public static List<Prisoner> getExtent() {
+        return new ArrayList<>(prisoners);
+    }
+
+    private static void addExtent(Prisoner prisoner) {
+        prisoners.add(prisoner);
+
+    }
+
+    public static void showExtent() {
+        System.out.println("Extent of the class: " + Prisoner.class.getName());
+        for (Prisoner prisoner : prisoners) {
+            System.out.println(prisoner);
         }
-        return null; // If prisoner doesn't exist
     }
 
-    // A derived attribute (remaining sentence time in years)
-    public int getRemainingSentence(int yearsServed) {
-        return (sentenceLength.isEmpty()) ? Math.max(0, (sentenceLength.get() - yearsServed)) : 0;
+    public static int getTotalPrisoners() {
+        return totalPrisoners;
     }
 
-    public void addPrivilege(String privilege) {
-        privileges.add(privilege);
+    public int getRemainingSentence() {
+        return (this.sentenceLength != null) ? this.sentenceLength - (LocalDate.now().getYear() - yearOfBegining) : 0;
     }
 
     public List<String> getPrivileges() {
         return privileges;
     }
 
-    public void showSentencedDeath(){
-        System.out.println("Number of prisoners sentenced for life: " + lifeSentenceCount);
-    }
-
     @Override
     public String toString() {
-        return "Prisoner: " + name + ", ID: " + id + ", Crime: " + crime + ", Sentence: " + (sentenceLength.isPresent() ? sentenceLength.get() + " years" : "Life");
+        return "Prisoner: " + name.toString() + ", ID: " + id + ", Crime: " + crime + ", Sentence: " + (sentenceLength != null ? sentenceLength + " years" : "Life");
     }
 }
-
-
